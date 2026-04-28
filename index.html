@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Multi-IA Debate | Final</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
+        body { background-color: #11111b; color: #cdd6f4; display: flex; flex-direction: column; height: 100vh; }
+        .setup-screen { padding: 20px; background: #1e1e2e; border-bottom: 1px solid #313244; }
+        .setup-screen input { width: 100%; padding: 10px; margin: 5px 0; background: #181825; border: 1px solid #45475a; color: white; border-radius: 8px; font-size: 0.8rem; }
+        .chat-area { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .message { padding: 12px; border-radius: 12px; font-size: 0.95rem; max-width: 85%; }
+        .system { background-color: #313244; align-self: center; color: #a6adc8; font-size: 0.8rem; text-align: center; }
+        .user { background-color: #89b4fa; color: #11111b; align-self: flex-end; }
+        .llama { background-color: #f38ba8; color: #11111b; align-self: flex-start; }
+        .gemini { background-color: #a6e3a1; color: #11111b; align-self: flex-start; }
+        .app-footer { background-color: #1e1e2e; padding: 15px; border-top: 1px solid #313244; }
+        .input-group { display: flex; gap: 10px; background: #181825; padding: 10px; border-radius: 25px; }
+        textarea { flex-grow: 1; background: transparent; border: none; color: white; outline: none; resize: none; }
+        button { background: #89b4fa; border: none; border-radius: 50%; width: 45px; height: 45px; color: #11111b; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="setup-screen" id="setup">
+        <p style="font-size: 0.8rem; margin-bottom: 5px; color: #89b4fa;">Configuración de Llaves:</p>
+        <input type="password" id="g-key" placeholder="Pega aquí la API Key de Gemini">
+        <input type="password" id="q-key" placeholder="Pega aquí la API Key de Groq">
+        <button onclick="document.getElementById('setup').style.display='none'" style="width: 100%; border-radius: 8px; height: 35px; font-size: 0.9rem; margin-top: 5px;">Listo para debatir</button>
+    </div>
+
+    <main id="chat-container" class="chat-area">
+        <div class="message system">Ingresa tus llaves arriba y dale a "Listo".</div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="input-group">
+            <textarea id="prompt-input" placeholder="Escribe tu consulta..." rows="1"></textarea>
+            <button id="send-btn">➔</button>
+        </div>
+    </footer>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const promptInput = document.getElementById('prompt-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        function appendMessage(sender, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}`;
+            msgDiv.innerHTML = `<strong>${sender.toUpperCase()}:</strong><br>${text}`;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function startDebate() {
+            const gK = document.getElementById('g-key').value;
+            const qK = document.getElementById('q-key').value;
+            const text = promptInput.value.trim();
+            if (!text || !gK || !qK) return alert("Faltan llaves o texto");
+
+            appendMessage('user', text);
+            promptInput.value = '';
+
+            try {
+                appendMessage('system', 'Llama 3 analizando...');
+                const llamaRes = await callLlama(text, qK);
+                appendMessage('llama', llamaRes);
+
+                appendMessage('system', 'Gemini revisando...');
+                const geminiRes = await callGemini(`Mejora esto: ${llamaRes}`, gK);
+                appendMessage('gemini', geminiRes);
+            } catch (e) {
+                appendMessage('system', 'Error: Revisa tus llaves.');
+            }
+        }
+
+        async function callLlama(p, k) {
+            const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${k}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: 'llama3-8b-8192', messages: [{role: 'user', content: p}] })
+            });
+            const d = await r.json();
+            return d.choices[0].message.content;
+        }
+
+        async function callGemini(p, k) {
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: p }] }] })
+            });
+            const d = await r.json();
+            return d.candidates[0].content.parts[0].text;
+        }
+
+        sendBtn.onclick = startDebate;
+    </script>
+</body>
+</html>
