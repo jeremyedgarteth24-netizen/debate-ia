@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debate IA | Test Final</title>
+    <style>
+        body { background: #11111b; color: #cdd6f4; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
+        .setup { padding: 15px; background: #1e1e2e; border-bottom: 1px solid #45475a; }
+        input { width: 100%; padding: 10px; margin: 5px 0; background: #181825; border: 1px solid #45475a; color: white; border-radius: 5px; }
+        .chat { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px; border-radius: 10px; max-width: 80%; font-size: 0.9rem; }
+        .system { background: #313244; align-self: center; font-size: 0.7rem; }
+        .user { background: #89b4fa; color: #11111b; align-self: flex-end; }
+        .ai { background: #a6e3a1; color: #11111b; align-self: flex-start; }
+        .footer { padding: 10px; background: #1e1e2e; display: flex; gap: 10px; }
+        textarea { flex-grow: 1; border-radius: 20px; padding: 10px; background: #181825; color: white; border: 1px solid #45475a; resize: none; }
+    </style>
+</head>
+<body>
+    <div class="setup" id="setup">
+        <input type="text" id="g-key" placeholder="API Key Gemini (AIza...)">
+        <input type="text" id="q-key" placeholder="API Key Groq (gsk_...)">
+        <button onclick="document.getElementById('setup').style.display='none'" style="width:100%; background:#89b4fa; border:none; padding:10px; border-radius:5px;">Guardar y Empezar</button>
+    </div>
+    <div class="chat" id="chat"></div>
+    <div class="footer">
+        <textarea id="input" placeholder="Escribe algo..."></textarea>
+        <button onclick="start()" style="border-radius:50%; width:45px; background:#89b4fa; border:none;">➔</button>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chat');
+        function add(type, txt) {
+            const d = document.createElement('div');
+            d.className = `msg ${type}`;
+            d.innerHTML = txt;
+            chat.appendChild(d);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function start() {
+            const gk = document.getElementById('g-key').value.trim();
+            const qk = document.getElementById('q-key').value.trim();
+            const txt = document.getElementById('input').value.trim();
+            if(!gk || !qk || !txt) return alert("Faltan datos");
+            
+            add('user', txt);
+            document.getElementById('input').value = "";
+
+            try {
+                add('system', 'Llamando a Groq...');
+                const r1 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${qk}` },
+                    body: JSON.stringify({ model: 'llama3-8b-8192', messages: [{role: 'user', content: txt}] })
+                });
+                const d1 = await r1.json();
+                if(d1.error) throw new Error("Groq: " + d1.error.message);
+                const res1 = d1.choices[0].message.content;
+                add('ai', '<b>Llama 3:</b><br>' + res1);
+
+                add('system', 'Llamando a Gemini...');
+                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gk}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Mejora esta respuesta: " + res1 }] }] })
+                });
+                const d2 = await r2.json();
+                if(d2.error) throw new Error("Gemini: " + d2.error.message);
+                add('ai', '<b>Gemini:</b><br>' + d2.candidates[0].content.parts[0].text);
+
+            } catch (e) {
+                add('system', '❌ ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
