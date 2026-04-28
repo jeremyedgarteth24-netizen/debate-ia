@@ -3,75 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-IA Debate | Final</title>
+    <title>Debate Final IA</title>
     <style>
-        body { background: #11111b; color: #cdd6f4; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
-        .setup { padding: 15px; background: #1e1e2e; border-bottom: 1px solid #45475a; }
-        input { width: 100%; padding: 10px; margin: 5px 0; background: #181825; border: 1px solid #45475a; color: white; border-radius: 5px; font-size: 0.8rem; }
-        .chat { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 12px; border-radius: 12px; max-width: 85%; font-size: 0.95rem; line-height: 1.4; }
-        .system { background: #313244; align-self: center; font-size: 0.75rem; color: #a6adc8; border-radius: 5px; padding: 5px 10px; }
-        .user { background: #89b4fa; color: #11111b; align-self: flex-end; }
-        .ai { background: #a6e3a1; color: #11111b; align-self: flex-start; }
-        .footer { padding: 10px; background: #1e1e2e; display: flex; gap: 10px; border-top: 1px solid #313244; }
-        textarea { flex-grow: 1; border-radius: 20px; padding: 12px; background: #181825; color: white; border: 1px solid #45475a; resize: none; outline: none; }
-        button#send-btn { border-radius: 50%; width: 48px; height: 48px; background: #89b4fa; border: none; color: #11111b; font-size: 1.2rem; cursor: pointer; }
+        body { background: #0b0b10; color: #cdd6f4; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        .setup-box { padding: 15px; background: #181825; border-bottom: 2px solid #f38ba8; }
+        input { width: 100%; padding: 12px; margin: 5px 0; background: #11111b; border: 1px solid #45475a; color: white; border-radius: 8px; }
+        .chat-area { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .bubble { padding: 12px; border-radius: 12px; max-width: 85%; font-size: 0.95rem; }
+        .sys { background: #313244; align-self: center; font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; }
+        .usr { background: #89b4fa; color: #11111b; align-self: flex-end; }
+        .bot { background: #a6e3a1; color: #11111b; align-self: flex-start; }
+        .input-bar { padding: 15px; background: #181825; display: flex; gap: 10px; }
+        textarea { flex-grow: 1; background: #11111b; color: white; border: 1px solid #45475a; border-radius: 20px; padding: 12px; resize: none; outline: none; }
+        button#go { background: #f38ba8; border: none; border-radius: 50%; width: 50px; height: 50px; color: #11111b; font-size: 1.5rem; }
     </style>
 </head>
 <body>
-    <div class="setup" id="setup">
-        <input type="password" id="g-key" placeholder="API Key Gemini">
-        <input type="password" id="q-key" placeholder="API Key Groq">
-        <button onclick="document.getElementById('setup').style.display='none'" style="width:100%; background:#f38ba8; color:#11111b; border:none; padding:10px; border-radius:5px; font-weight:bold;">LISTO PARA DEBATIR</button>
+    <div id="config" class="setup-box">
+        <input type="password" id="key_g" placeholder="API Key Gemini">
+        <input type="password" id="key_q" placeholder="API Key Groq">
+        <button onclick="document.getElementById('config').style.display='none'" style="width:100%; background:#a6e3a1; padding:10px; border:none; border-radius:8px; margin-top:5px; font-weight:bold;">ACTIVAR IAs</button>
     </div>
-    <div class="chat" id="chat"></div>
-    <div class="footer">
-        <textarea id="input" placeholder="Escribe tu consulta..."></textarea>
-        <button id="send-btn" onclick="start()">➔</button>
+    <div id="chat" class="chat-area"></div>
+    <div class="input-bar">
+        <textarea id="msg_in" placeholder="Escribe tu mensaje..."></textarea>
+        <button id="go" onclick="ejecutarDebate()">➔</button>
     </div>
 
     <script>
         const chat = document.getElementById('chat');
-        function add(type, txt) {
+        function print(clase, texto) {
             const d = document.createElement('div');
-            d.className = `msg ${type}`;
-            d.innerHTML = txt;
+            d.className = `bubble ${clase}`;
+            d.innerHTML = texto;
             chat.appendChild(d);
             chat.scrollTop = chat.scrollHeight;
         }
 
-        async function start() {
-            const gk = document.getElementById('g-key').value.trim();
-            const qk = document.getElementById('q-key').value.trim();
-            const txt = document.getElementById('input').value.trim();
-            if(!gk || !qk || !txt) return alert("Faltan datos");
-            add('user', txt);
-            document.getElementById('input').value = "";
+        async function ejecutarDebate() {
+            const kg = document.getElementById('key_g').value.trim();
+            const kq = document.getElementById('key_q').value.trim();
+            const ms = document.getElementById('msg_in').value.trim();
+            if(!kg || !kq || !ms) return;
+
+            print('usr', ms);
+            document.getElementById('msg_in').value = "";
 
             try {
-                add('system', '⏳ Llama 3.3 analizando...');
+                print('sys', '⏳ Llama 3.3 analizando...');
                 const r1 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${qk}` },
-                    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{role: 'user', content: txt}] })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${kq}` },
+                    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{role: 'user', content: ms}] })
                 });
                 const d1 = await r1.json();
-                const res1 = d1.choices[0].message.content;
-                add('ai', '<b>🦙 Llama 3.3:</b><br>' + res1.replace(/\n/g, '<br>'));
+                const t1 = d1.choices[0].message.content;
+                print('bot', '<b>🦙 Llama 3.3:</b><br>' + t1.replace(/\n/g, '<br>'));
 
-                add('system', '⏳ Gemini mejorando...');
-                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gk}`, {
+                print('sys', '⏳ Gemini mejorando...');
+                // DIRECCIÓN ESTABLE V1 (SIN BETA)
+                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${kg}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "Mejora esta respuesta: " + res1 }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Mejora esta respuesta: " + t1 }] }] })
                 });
                 const d2 = await r2.json();
                 if(d2.error) throw new Error(d2.error.message);
-                const res2 = d2.candidates[0].content.parts[0].text;
-                add('ai', '<b>✨ Gemini:</b><br>' + res2.replace(/\n/g, '<br>'));
-                add('system', '✅ Fin del debate.');
+                const t2 = d2.candidates[0].content.parts[0].text;
+                print('bot', '<b>✨ Gemini:</b><br>' + t2.replace(/\n/g, '<br>'));
+                print('sys', '✅ Debate terminado.');
             } catch (e) {
-                add('system', '❌ Error: ' + e.message);
+                print('sys', '❌ Error: ' + e.message);
             }
         }
     </script>
