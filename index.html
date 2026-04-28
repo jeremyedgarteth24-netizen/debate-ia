@@ -7,15 +7,15 @@
     <style>
         body { background: #0b0b10; color: #cdd6f4; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         .setup-box { padding: 15px; background: #181825; border-bottom: 2px solid #f38ba8; }
-        input { width: 100%; padding: 12px; margin: 5px 0; background: #11111b; border: 1px solid #45475a; color: white; border-radius: 8px; }
+        input { width: 100%; padding: 12px; margin: 5px 0; background: #11111b; border: 1px solid #45475a; color: white; border-radius: 8px; font-size: 0.9rem; }
         .chat-area { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { padding: 12px; border-radius: 12px; max-width: 85%; font-size: 0.95rem; }
+        .bubble { padding: 12px; border-radius: 12px; max-width: 85%; font-size: 0.95rem; line-height: 1.4; }
         .sys { background: #313244; align-self: center; font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; color: #a6adc8; }
         .usr { background: #89b4fa; color: #11111b; align-self: flex-end; }
         .bot { background: #a6e3a1; color: #11111b; align-self: flex-start; }
-        .input-bar { padding: 15px; background: #181825; display: flex; gap: 10px; }
+        .input-bar { padding: 15px; background: #181825; display: flex; gap: 10px; border-top: 1px solid #313244; }
         textarea { flex-grow: 1; background: #11111b; color: white; border: 1px solid #45475a; border-radius: 20px; padding: 12px; resize: none; outline: none; }
-        button#go { background: #f38ba8; border: none; border-radius: 50%; width: 50px; height: 50px; color: #11111b; font-size: 1.5rem; }
+        button#go { background: #f38ba8; border: none; border-radius: 50%; width: 50px; height: 50px; color: #11111b; font-size: 1.5rem; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -50,7 +50,7 @@
             document.getElementById('msg_in').value = "";
 
             try {
-                print('sys', '⏳ Llama 3.3 analizando...');
+                print('sys', '⏳ Llama 3.3 (Groq) analizando...');
                 const r1 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${kq}` },
@@ -61,16 +61,16 @@
                 print('bot', '<b>🦙 Llama 3.3:</b><br>' + t1.replace(/\n/g, '<br>'));
 
                 print('sys', '⏳ Gemini mejorando...');
-                // MODELO GEMINI-PRO EN RUTA V1
-                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${kg}`, {
+                // RUTA V1BETA Y MODELO FLASH (EL MÁS COMPATIBLE)
+                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${kg}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "Mejora esta respuesta de forma experta: " + t1 }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Como experto, mejora esta respuesta: " + t1 }] }] })
                 });
                 const d2 = await r2.json();
                 if(d2.error) throw new Error(d2.error.message);
                 const t2 = d2.candidates[0].content.parts[0].text;
-                print('bot', '<b>✨ Gemini Pro:</b><br>' + t2.replace(/\n/g, '<br>'));
+                print('bot', '<b>✨ Gemini Final:</b><br>' + t2.replace(/\n/g, '<br>'));
                 print('sys', '✅ Debate terminado.');
             } catch (e) {
                 print('sys', '❌ Error: ' + e.message);
