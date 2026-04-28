@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debate Final IA</title>
+    <title>Debate Final | V3</title>
     <style>
         body { background: #0b0b10; color: #cdd6f4; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        .setup-box { padding: 15px; background: #181825; border-bottom: 2px solid #f38ba8; }
-        input { width: 100%; padding: 12px; margin: 5px 0; background: #11111b; border: 1px solid #45475a; color: white; border-radius: 8px; font-size: 0.9rem; }
+        .setup-box { padding: 15px; background: #181825; border-bottom: 3px solid #a6e3a1; }
+        input { width: 100%; padding: 12px; margin: 5px 0; background: #11111b; border: 1px solid #45475a; color: white; border-radius: 8px; }
         .chat-area { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .bubble { padding: 12px; border-radius: 12px; max-width: 85%; font-size: 0.95rem; line-height: 1.4; }
         .sys { background: #313244; align-self: center; font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; color: #a6adc8; }
         .usr { background: #89b4fa; color: #11111b; align-self: flex-end; }
         .bot { background: #a6e3a1; color: #11111b; align-self: flex-start; }
-        .input-bar { padding: 15px; background: #181825; display: flex; gap: 10px; border-top: 1px solid #313244; }
+        .input-bar { padding: 15px; background: #181825; display: flex; gap: 10px; }
         textarea { flex-grow: 1; background: #11111b; color: white; border: 1px solid #45475a; border-radius: 20px; padding: 12px; resize: none; outline: none; }
         button#go { background: #f38ba8; border: none; border-radius: 50%; width: 50px; height: 50px; color: #11111b; font-size: 1.5rem; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="config" class="setup-box">
-        <input type="password" id="key_g" placeholder="API Key Gemini">
+        <input type="password" id="key_g" placeholder="Nueva API Key Gemini">
         <input type="password" id="key_q" placeholder="API Key Groq">
-        <button onclick="document.getElementById('config').style.display='none'" style="width:100%; background:#a6e3a1; padding:10px; border:none; border-radius:8px; margin-top:5px; font-weight:bold; color:#11111b;">ACTIVAR IAs</button>
+        <button onclick="document.getElementById('config').style.display='none'" style="width:100%; background:#a6e3a1; padding:10px; border:none; border-radius:8px; margin-top:5px; font-weight:bold; color:#11111b;">¡ACTIVAR DEBATE!</button>
     </div>
     <div id="chat" class="chat-area"></div>
     <div class="input-bar">
         <textarea id="msg_in" placeholder="Escribe tu mensaje..."></textarea>
-        <button id="go" onclick="ejecutarDebate()">➔</button>
+        <button id="go" onclick="startDebate()">➔</button>
     </div>
 
     <script>
@@ -40,7 +40,7 @@
             chat.scrollTop = chat.scrollHeight;
         }
 
-        async function ejecutarDebate() {
+        async function startDebate() {
             const kg = document.getElementById('key_g').value.trim();
             const kq = document.getElementById('key_q').value.trim();
             const ms = document.getElementById('msg_in').value.trim();
@@ -50,7 +50,7 @@
             document.getElementById('msg_in').value = "";
 
             try {
-                print('sys', '⏳ Llama 3.3 (Groq) analizando...');
+                print('sys', '⏳ Llama 3.3 analizando...');
                 const r1 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${kq}` },
@@ -60,18 +60,18 @@
                 const t1 = d1.choices[0].message.content;
                 print('bot', '<b>🦙 Llama 3.3:</b><br>' + t1.replace(/\n/g, '<br>'));
 
-                print('sys', '⏳ Gemini mejorando...');
-                // RUTA V1BETA Y MODELO FLASH (EL MÁS COMPATIBLE)
-                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${kg}`, {
+                print('sys', '⏳ Gemini mejorando respuesta...');
+                // RUTA V1 ESTABLE (JAQUE MATE)
+                const r2 = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${kg}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "Como experto, mejora esta respuesta: " + t1 }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Mejora esta respuesta: " + t1 }] }] })
                 });
                 const d2 = await r2.json();
                 if(d2.error) throw new Error(d2.error.message);
                 const t2 = d2.candidates[0].content.parts[0].text;
                 print('bot', '<b>✨ Gemini Final:</b><br>' + t2.replace(/\n/g, '<br>'));
-                print('sys', '✅ Debate terminado.');
+                print('sys', '✅ Debate completado.');
             } catch (e) {
                 print('sys', '❌ Error: ' + e.message);
             }
